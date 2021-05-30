@@ -27,6 +27,9 @@ Resources:
         - SSMParameterReadPolicy:
             ParameterName: 
               !Ref "JIRAToken"
+        - SSMParameterReadPolicy:
+            ParameterName: 
+              !Ref "JIRASite"      
       Events:
         GetJIRAData:
           Type: Schedule # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
@@ -45,15 +48,21 @@ Resources:
       Name: "/getJIRAData/username"
       Description: "basic-auth username for JIRA instance"
       Type: String
-      Value: "please setValue"
+      Value: "Please set a value"
   JIRAToken:
     Type: AWS::SSM::Parameter
     Properties:
       Name: "/getJIRAData/token"
       Description: "basic-auth token for JIRA instance"
       Type: String
-      Value: "please setValue"
-
+      Value: "Please set a value"
+  JIRASite:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "/getJIRAData/site"
+      Description: "site name for JIRA instance"
+      Type: String
+      Value: "Please set a value"
             
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
