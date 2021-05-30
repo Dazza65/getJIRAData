@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  getDevOpsKPIs
+
+  Sample SAM Template for getDevOpsKPIs
+  
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 10
+
+Resources:
+  GetJIRADataFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: getJIRAData/
+      Handler: app.lambdaHandler
+      Runtime: nodejs14.x
+      Policies:
+        - S3CrudPolicy: 
+            BucketName: 
+              !Ref "JIRADataBucket"
+        - SSMParameterReadPolicy:
+            ParameterName: 
+              !Ref "JIRAUserName"
+        - SSMParameterReadPolicy:
+            ParameterName: 
+              !Ref "JIRAToken"
+      Events:
+        GetJIRAData:
+          Type: Schedule # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Description: "Schedule to get fresh JIRA data each hour"
+            Enabled: True
+            Name: "sam-getJIRADataSchedule"
+            Schedule: "cron(0/10 * ? * MON-FRI *)"
+  JIRADataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: "sam-jiradata-dh"
+  JIRAUserName:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "/getJIRAData/username"
+      Description: "basic-auth username for JIRA instance"
+      Type: String
+      Value: "please setValue"
+  JIRAToken:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "/getJIRAData/token"
+      Description: "basic-auth token for JIRA instance"
+      Type: String
+      Value: "please setValue"
+
+            
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  GetJIRADataFunction:
+    Description: "getJIRAData Lambda Function ARN"
+    Value: !GetAtt GetJIRADataFunction.Arn
+  GetJIRADataFunctionIamRole:
+    Description: "Implicit IAM Role created for Get JIRA Data function"
+    Value: !GetAtt GetJIRADataFunctionRole.Arn
