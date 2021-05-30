@@ -4,19 +4,16 @@ const { SSMClient, GetParameterCommand } = require("@aws-sdk/client-ssm");
 
 
 const getData = async () => {
-
     const ssmClient = new SSMClient({region: 'ap-southeast-2'});
     const userName = await ssmClient.send(new GetParameterCommand({Name: '/getJIRAData/username'}));
     const token = await ssmClient.send(new GetParameterCommand({Name: '/getJIRAData/token'}));
     const site = await ssmClient.send(new GetParameterCommand({Name: '/getJIRAData/site'}));
+    const jql = await ssmClient.send(new GetParameterCommand({Name: '/getJIRAData/jql'}));
 
-    const auth_token = Buffer.from(`${userName.Parameter.Value}:${token.Parameter.Value}`, 'utf8').toString('base64')
-
+    const auth_token = Buffer.from(`${userName.Parameter.Value}:${token.Parameter.Value}`, 'utf8').toString('base64');
     axios.defaults.headers.Authorization = `Basic ${auth_token}`;
-
-    const jql = encodeURIComponent("project = SSP AND type = Story AND status = Done"); 
-    const url = `https://${site.Parameter.Value}.atlassian.net/rest/api/3/search?jql=${jql}&maxResults=2&fields=id,key,summary,created,resolutiondate`;
-
+ 
+    const url = `https://${site.Parameter.Value}.atlassian.net/rest/api/3/search?jql=${encodeURIComponent(jql.Parameter.Value)}&maxResults=2&fields=id,key,summary,created,resolutiondate`;
 
     const res = await axios.get(url, {
         headers: {
