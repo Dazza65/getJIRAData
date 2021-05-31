@@ -4,7 +4,7 @@ const { SSMClient, GetParameterCommand } = require("@aws-sdk/client-ssm");
 
 
 const getData = async () => {
-    const ssmClient = new SSMClient({region: 'ap-southeast-2'});
+    const ssmClient = new SSMClient({region: `${process.env.AWS_REGION}`});
     const userName = await ssmClient.send(new GetParameterCommand({Name: '/getJIRAData/username'}));
     const token = await ssmClient.send(new GetParameterCommand({Name: '/getJIRAData/token'}));
     const site = await ssmClient.send(new GetParameterCommand({Name: '/getJIRAData/site'}));
@@ -37,7 +37,7 @@ const getData = async () => {
 };
 
 const putObject = async (issues) => {
-    const client = new S3Client({region: 'ap-southeast-2'});
+    const client = new S3Client({region: `${process.env.AWS_REGION}`});
 
     const currentDate = new Date().toISOString().substr(0, 19);
     const fileName = `JIRAdata.${currentDate}`;
