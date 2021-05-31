@@ -1,10 +1,13 @@
+const AWSXRay = require('aws-xray-sdk-core');
+const https = require('https');
 const axios = require('axios');
+
 const { S3Client, PutObjectCommand }  = require('@aws-sdk/client-s3');
 const { SSMClient, GetParameterCommand } = require("@aws-sdk/client-ssm");
 
-
 const getData = async () => {
-    const ssmClient = new SSMClient({region: `${process.env.AWS_REGION}`});
+    const ssmClient = AWSXRay.captureAWSv3Client(new SSMClient({region: process.env.AWS_REGION} ));
+
     const userName = await ssmClient.send(new GetParameterCommand({Name: '/getJIRAData/username'}));
     const token = await ssmClient.send(new GetParameterCommand({Name: '/getJIRAData/token'}));
     const site = await ssmClient.send(new GetParameterCommand({Name: '/getJIRAData/site'}));
@@ -13,6 +16,8 @@ const getData = async () => {
     const auth_token = Buffer.from(`${userName.Parameter.Value}:${token.Parameter.Value}`, 'utf8').toString('base64');
     axios.defaults.headers.Authorization = `Basic ${auth_token}`;
  
+    AWSXRay.captureHTTPsGlobal(https);
+
     const url = `https://${site.Parameter.Value}.atlassian.net/rest/api/3/search?jql=${encodeURIComponent(jql.Parameter.Value)}&maxResults=2&fields=id,key,summary,created,resolutiondate`;
 
     const res = await axios.get(url, {
@@ -37,7 +42,7 @@ const getData = async () => {
 };
 
 const putObject = async (issues) => {
-    const client = new S3Client({region: `${process.env.AWS_REGION}`});
+    const client = AWSXRay.captureAWSv3Client(new S3Client({region: `${process.env.AWS_REGION}`}));
 
     const currentDate = new Date().toISOString().substr(0, 19);
     const fileName = `JIRAdata.${currentDate}`;
