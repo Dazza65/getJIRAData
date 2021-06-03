@@ -18,22 +18,7 @@ Resources:
       Handler: app.lambdaHandler
       Runtime: nodejs14.x
       Tracing: Active
-      Policies:
-        - S3CrudPolicy: 
-            BucketName: 
-              !Ref "JIRADataBucket"
-        - SSMParameterReadPolicy:
-            ParameterName: 
-              !Ref "JIRAUserName"
-        - SSMParameterReadPolicy:
-            ParameterName: 
-              !Ref "JIRAToken"
-        - SSMParameterReadPolicy:
-            ParameterName: 
-              !Ref "JIRASite"   
-        - SSMParameterReadPolicy:
-            ParameterName: 
-              !Ref "JIRAJql"                  
+      Role: !GetAtt GetJIRADataRole.Arn
       Events:
         GetJIRAData:
           Type: Schedule # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
@@ -42,6 +27,60 @@ Resources:
             Enabled: True
             Name: "sam-getJIRADataSchedule"
             Schedule: "cron(0/10 * ? * MON-FRI *)"
+  GetJIRADataRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: "Role to provide access for Lambda function to get JIRA data"
+      RoleName: sam-GetJIRADataRole
+      AssumeRolePolicyDocument: {
+        "Version": "2012-10-17",
+        "Statement": [ {
+            "Effect": "Allow",
+            "Principal": {
+              "Service": "lambda.amazonaws.com"
+            },
+            "Action": "sts:AssumeRole"
+          } ]
+      }
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies: 
+        - PolicyName: GetJIRADataS3Access
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              Action:
+                - s3:GetObject
+                - s3:ListBucket
+                - s3:GetBucketLocation
+                - s3:GetObjectVersion
+                - s3:PutObject
+                - s3:PutObjectAcl
+                - s3:GetLifecycleConfiguration
+                - s3:PutLifecycleConfiguration
+                - s3:DeleteObject
+              Resource:
+                - arn:aws:s3:::sam-jiradata-dh
+                - arn:aws:s3:::sam-jiradata-dh/*
+              Effect: Allow
+        - PolicyName: GetJIRADataSSMPathAccess
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement: 
+              - Action:
+                  ssm:DescribeParameters
+                Resource: "*"
+                Effect: Allow
+              - Action: 
+                  - ssm:GetParameters
+                  - ssm:GetParameter
+                  - ssm:GetParametersByPath
+                Resource: arn:aws:ssm:ap-southeast-2:346327484579:parameter/getJIRAData/*
+                Effect: Allow
+
+
+        
   JIRADataBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -82,6 +121,6 @@ Outputs:
   GetJIRADataFunction:
     Description: "getJIRAData Lambda Function ARN"
     Value: !GetAtt GetJIRADataFunction.Arn
-  GetJIRADataFunctionIamRole:
-    Description: "Implicit IAM Role created for Get JIRA Data function"
-    Value: !GetAtt GetJIRADataFunctionRole.Arn
+  GetJIRADataRole:
+    Description: "Explicit IAM Role created for Get JIRA Data function"
+    Value: !GetAtt GetJIRADataRole.Arn
