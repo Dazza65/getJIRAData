@@ -5,10 +5,12 @@ Description: >
 
   Sample SAM Template for getDevOpsKPIs
   
-# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
     Timeout: 10
+    Environment: 
+      Variables:
+        AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
 
 Resources:
   GetJIRADataFunction:
@@ -21,12 +23,12 @@ Resources:
       Role: !GetAtt GetJIRADataRole.Arn
       Events:
         GetJIRAData:
-          Type: Schedule # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Type: Schedule
           Properties:
             Description: "Schedule to get fresh JIRA data each hour"
             Enabled: True
             Name: "sam-getJIRADataSchedule"
-            Schedule: "cron(0/10 * ? * MON-FRI *)"
+            Schedule: "cron(0 * ? * MON-FRI *)"
   GetJIRADataRole:
     Type: AWS::IAM::Role
     Properties:
