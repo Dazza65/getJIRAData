@@ -63,8 +63,8 @@ Resources:
                 - s3:PutLifecycleConfiguration
                 - s3:DeleteObject
               Resource:
-                - arn:aws:s3:::sam-jiradata-dh
-                - arn:aws:s3:::sam-jiradata-dh/*
+                - !GetAtt JIRADataBucket.Arn
+                - !Join ['', [!GetAtt JIRADataBucket.Arn, '/*']]
               Effect: Allow
         - PolicyName: GetJIRADataSSMPathAccess
           PolicyDocument:
@@ -80,13 +80,27 @@ Resources:
                   - ssm:GetParametersByPath
                 Resource: arn:aws:ssm:ap-southeast-2:346327484579:parameter/getJIRAData/*
                 Effect: Allow
-
+        - PolicyName: GetJIRADataCFAccess
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement: 
+              - Action: 
+                  - cloudformation:Describe*
+                  - cloudformation:Get*
+                  - sscloudformationm:List*
+                Resource: !Ref AWS::StackId
+                Effect: Allow
 
         
   JIRADataBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: "sam-jiradata-dh"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
   JIRAUserName:
     Type: AWS::SSM::Parameter
     Properties:
@@ -126,3 +140,6 @@ Outputs:
   GetJIRADataRole:
     Description: "Explicit IAM Role created for Get JIRA Data function"
     Value: !GetAtt GetJIRADataRole.Arn
+  GetJIRADataBucket:
+    Description: "S3 output bucket for Get JIRA Data function"
+    Value: !Ref JIRADataBucket

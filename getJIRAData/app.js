@@ -4,11 +4,14 @@ const axios = require('axios');
 
 const { S3Client, PutObjectCommand }  = require('@aws-sdk/client-s3');
 const { SSMClient, GetParameterCommand, GetParametersByPathCommand } = require("@aws-sdk/client-ssm");
+const { CloudFormationClient, DescribeStacksCommand } = require("@aws-sdk/client-cloudformation");
 
 // const ssmClient = new SSMClient({region: process.env.AWS_REGION});
 const ssmClient = AWSXRay.captureAWSv3Client(new SSMClient({region: process.env.AWS_REGION}));
 //    const s3Client = new S3Client({region: `${process.env.AWS_REGION}`});
 const s3Client = AWSXRay.captureAWSv3Client(new S3Client({region: `${process.env.AWS_REGION}`}));
+
+const cfClient = AWSXRay.captureAWSv3Client(new CloudFormationClient({region: `${process.env.AWS_REGION}`}));
 
 let config = null;
 
@@ -23,6 +26,14 @@ const init = async (ssmPath) => {
 
     const auth_token = Buffer.from(`${config.get('username')}:${config.get('token')}`, 'utf8').toString('base64');
     axios.defaults.headers.Authorization = `Basic ${auth_token}`;
+
+    const stackOutput = await cfClient.send(new DescribeStacksCommand({StackName: "sam-getJIRAData"}));
+    
+    const bucketName = stackOutput.Stacks[0].Outputs.find( e => {
+         return e.OutputKey === 'GetJIRADataBucket';
+    });
+
+    config.set(bucketName.OutputKey, bucketName.OutputValue);
 
     return config;
 }
@@ -54,11 +65,10 @@ const getData = async () => {
 };
 
 const putObject = async (issues) => {
-
     const currentDate = new Date().toISOString().substr(0, 19);
     const fileName = `JIRAdata.${currentDate}`;
     const s3Params = {
-        Bucket: 'sam-jiradata-dh',
+        Bucket: config.get('GetJIRADataBucket'),
         Key: fileName,
         Body: JSON.stringify(issues)
     };
