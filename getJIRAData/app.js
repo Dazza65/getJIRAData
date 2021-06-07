@@ -8,9 +8,9 @@ const { CloudFormationClient, DescribeStacksCommand } = require("@aws-sdk/client
 
 // const ssmClient = new SSMClient({region: process.env.AWS_REGION});
 const ssmClient = AWSXRay.captureAWSv3Client(new SSMClient({region: process.env.AWS_REGION}));
-//    const s3Client = new S3Client({region: `${process.env.AWS_REGION}`});
+// const s3Client = new S3Client({region: `${process.env.AWS_REGION}`});
 const s3Client = AWSXRay.captureAWSv3Client(new S3Client({region: `${process.env.AWS_REGION}`}));
-
+// const cfClient = new CloudFormationClient({region: `${process.env.AWS_REGION}`});
 const cfClient = AWSXRay.captureAWSv3Client(new CloudFormationClient({region: `${process.env.AWS_REGION}`}));
 
 let config = null;
@@ -29,8 +29,8 @@ const init = async (ssmPath) => {
 
     const stackOutput = await cfClient.send(new DescribeStacksCommand({StackName: "sam-getJIRAData"}));
     
-    const bucketName = stackOutput.Stacks[0].Outputs.find( e => {
-         return e.OutputKey === 'GetJIRADataBucket';
+    const bucketName = stackOutput.Stacks[0].Outputs.find( output => {
+         return output.OutputKey === 'GetJIRADataBucket';
     });
 
     config.set(bucketName.OutputKey, bucketName.OutputValue);
@@ -41,25 +41,38 @@ const init = async (ssmPath) => {
 const getData = async () => {
  
     AWSXRay.captureHTTPsGlobal(https);
-    const url = `https://${config.get('site')}.atlassian.net/rest/api/3/search?jql=${encodeURIComponent(config.get('jql'))}&maxResults=2&fields=id,key,summary,created,resolutiondate`;
+    let startAt = 0;
+    let count = 0;
+    let total = 0;
+    let issues = [];
 
-    const res = await axios.get(url, {
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    });
+    do {
+        startAt += count;
 
-    const issues = res.data.issues.map( (issue) => {
-        return( {
-            id: issue.id,
-            key: issue.key,
-            summary: issue.fields.summary,
-            dateCreated: issue.fields.created,
-            dateResolved: issue.fields.resolutiondate
+        let url = `https://${config.get('site')}.atlassian.net/rest/api/3/search?jql=${encodeURIComponent(config.get('jql'))}&startAt=${startAt}&fields=id,key,summary,created,resolutiondate`;
+
+        let res = await axios.get(url, {
+            headers: {
+                'Content-Type': 'application/json'
+            }
         });
-    });
+    
+        total = res.data.total;
+        count = res.data.issues.length;
+    
+        let page = res.data.issues.map( (issue) => {
+            return( {
+                id: issue.id,
+                key: issue.key,
+                summary: issue.fields.summary,
+                dateCreated: issue.fields.created,
+                dateResolved: issue.fields.resolutiondate
+            });
+        });
+    
+        issues = [...issues, ...page];
 
-    console.log(JSON.stringify(issues));
+    } while(startAt + count < total);
 
     return issues;
 };
