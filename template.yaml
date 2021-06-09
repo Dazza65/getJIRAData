@@ -94,6 +94,8 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
 
   JIRAUserName:
     Type: AWS::SSM::Parameter

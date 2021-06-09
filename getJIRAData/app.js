@@ -78,8 +78,7 @@ const getData = async () => {
 };
 
 const putObject = async (issues) => {
-    const currentDate = new Date().toISOString().substr(0, 19);
-    const fileName = `JIRAdata.${currentDate}`;
+    const fileName = 'JIRAdata.json';
     const s3Params = {
         Bucket: config.get('GetJIRADataBucket'),
         Key: fileName,
