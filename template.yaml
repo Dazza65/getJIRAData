@@ -28,7 +28,7 @@ Resources:
             Description: "Schedule to get fresh JIRA data each hour"
             Enabled: True
             Name: "sam-getJIRADataSchedule"
-            Schedule: "cron(0 * ? * MON-FRI *)"
+            Schedule: "cron(1 0 ? * MON-FRI *)"
   GetJIRADataRole:
     Type: AWS::IAM::Role
     Properties:
@@ -139,3 +139,10 @@ Outputs:
   GetJIRADataBucket:
     Description: "S3 output bucket for Get JIRA Data function"
     Value: !Ref JIRADataBucket
+    Export:
+      Name: !Join [':', [!Ref 'AWS::StackName', 'JIRADataBucket' ]]
+  GetJIRADataBucketArn:
+    Description: "S3 Arn of output bucket for Get JIRA Data function"
+    Value: !GetAtt JIRADataBucket.Arn
+    Export:
+      Name: !Join [':', [!Ref 'AWS::StackName', 'JIRADataBucketArn' ]]
