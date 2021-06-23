@@ -89,6 +89,7 @@ Resources:
   JIRADataBucket:
     Type: AWS::S3::Bucket
     Properties:
+      BucketName: !Join ['-', ['devopskpi', !Ref AWS::AccountId, 'input']]
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
