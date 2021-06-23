@@ -11,6 +11,7 @@ This project contains source code and supporting files for a serverless applicat
     1. AWS SAM (v1.23.0)
 1. sam build
 1. sam deploy
+1. Add values to the created system parameters (described below)
 
 ## The following AWS resources are created
 
@@ -24,3 +25,5 @@ This project contains source code and supporting files for a serverless applicat
 1. Role - the execution role associated with the Lambda function to provide access to XRay, SSM, S3 and CF
 1. S3 bucket - the destination for the retrieved JIRA issues.
 
+## Architecture Diagram
+![Architecture Diagram](images/DevOpsKPIs-1.png)
