@@ -5,6 +5,7 @@ const axios = require('axios');
 const { S3Client, PutObjectCommand }  = require('@aws-sdk/client-s3');
 const { SSMClient, GetParameterCommand, GetParametersByPathCommand } = require("@aws-sdk/client-ssm");
 const { CloudFormationClient, DescribeStacksCommand } = require("@aws-sdk/client-cloudformation");
+const { CloudWatchClient, PutMetricDataCommand } = require("@aws-sdk/client-cloudwatch");
 
 // const ssmClient = new SSMClient({region: process.env.AWS_REGION});
 const ssmClient = AWSXRay.captureAWSv3Client(new SSMClient({region: process.env.AWS_REGION}));
@@ -12,6 +13,8 @@ const ssmClient = AWSXRay.captureAWSv3Client(new SSMClient({region: process.env.
 const s3Client = AWSXRay.captureAWSv3Client(new S3Client({region: `${process.env.AWS_REGION}`}));
 // const cfClient = new CloudFormationClient({region: `${process.env.AWS_REGION}`});
 const cfClient = AWSXRay.captureAWSv3Client(new CloudFormationClient({region: `${process.env.AWS_REGION}`}));
+// const cwClient = new CloudWatchClient({region: `${process.env.AWS_REGION}`});
+const cwClient = AWSXRay.captureAWSv3Client(new CloudWatchClient({region: `${process.env.AWS_REGION}`}));
 
 let config = null;
 
@@ -73,6 +76,25 @@ const getData = async () => {
         issues = [...issues, ...page];
 
     } while(startAt + count < total);
+
+    const cwParams = {
+        MetricData: [
+            {
+                MetricName: "NUM_ISSUES",
+                Dimensions: [
+                    {
+                        Name: "JIRA_ISSUES",
+                        Value: "STORIES_DELIVERED"
+                    }
+                ],
+                Unit: "Count",
+                Value: issues.length
+            }
+        ],
+        Namespace: "DEVOPS/KPI"
+    };
+
+    await cwClient.send(new PutMetricDataCommand(cwParams));
 
     return issues;
 };

@@ -84,7 +84,14 @@ Resources:
                   - sscloudformationm:List*
                 Resource: !Ref AWS::StackId
                 Effect: Allow
-
+        - PolicyName: PutCWMetricAccess
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement: 
+              - Action: 
+                  - cloudwatch:PutMetricData
+                Resource: "*"
+                Effect: Allow
         
   JIRADataBucket:
     Type: AWS::S3::Bucket
