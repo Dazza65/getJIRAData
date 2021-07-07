@@ -29,6 +29,9 @@ Resources:
             Enabled: True
             Name: "sam-getJIRADataSchedule"
             Schedule: "cron(1 0 ? * MON-FRI *)"
+      Layers:
+        - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
+
   GetJIRADataRole:
     Type: AWS::IAM::Role
     Properties:
